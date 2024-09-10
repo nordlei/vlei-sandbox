@@ -1,0 +1,12 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "signify-ts": "github:weboftrust/signify-ts#main",
+    "vitest": "^2.0.5"
+  },
+  "scripts": {
+    "start": "vitest run",
+    "dev": "vitest"
+  }
+}

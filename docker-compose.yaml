@@ -1,0 +1,120 @@
+configs:
+  keria.json:
+    content: |
+      {
+          "dt": "2023-12-01T10:05:25.062609+00:00",
+          "keria": {
+              "dt": "2023-12-01T10:05:25.062609+00:00",
+              "curls": ["http://keria:3902/"]
+          },
+          "iurls": [
+              "http://witness-demo:5642/oobi/BBilc4-L3tFUnfM_wJr4S4OJanAv_VmF_dJNN6vkf2Ha/controller",
+              "http://witness-demo:5643/oobi/BLskRTInXnMxWaGqcpSyMgo0nYbalW99cGZESrz3zapM/controller",
+              "http://witness-demo:5644/oobi/BIKKuvBwpmDVA4Ds-EpL5bt9OqPzWPja2LigFYZN2YfX/controller"
+          ]
+      }
+  wan.json:
+    content: |
+      {
+          "dt": "2022-01-20T12:57:59.823350+00:00",
+          "wan": {
+              "dt": "2022-01-20T12:57:59.823350+00:00",
+              "curls": ["http://witness-demo:5642/"]
+          }
+      }
+  wil.json:
+    content: |
+      {
+          "dt": "2022-01-20T12:57:59.823350+00:00",
+          "wil": {
+              "dt": "2022-01-20T12:57:59.823350+00:00",
+              "curls": ["http://witness-demo:5643/"]
+          }
+      }
+  wes.json:
+    content: |
+      {
+          "dt": "2022-01-20T12:57:59.823350+00:00",
+          "wes": {
+              "dt": "2022-01-20T12:57:59.823350+00:00",
+              "curls": ["http://witness-demo:5644/"]
+          }
+      }
+
+services:
+  vlei-server:
+    image: gleif/vlei
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=UTF-8
+    command: ["vLEI-server", "-s", "./schema/acdc", "-c", "./samples/acdc/", "-o", "./samples/oobis/"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7723/oobi/EBfdlu8R27Fbx-ehrqwImnK-8Cm79sqbAQ4MmvEAYqao"]
+      interval: 2s
+      timeout: 3s
+      retries: 5
+      start_period: 2s
+    # ports:
+    #   - 7723:7723
+
+  witness-demo:
+    image: weboftrust/keri-witness-demo:1.1.0
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=UTF-8
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5642/oobi"]
+      interval: 2s
+      timeout: 3s
+      retries: 5
+      start_period: 2s
+    configs:
+      - source: wan.json
+        target: /usr/local/var/keri/cf/wan.json
+      - source: wes.json
+        target: /usr/local/var/keri/cf/wes.json
+      - source: wil.json
+        target: /usr/local/var/keri/cf/wil.json
+    # ports:
+    #   - 5642:5642
+    #   - 5643:5643
+    #   - 5644:5644
+
+  keria:
+    depends_on:
+      vlei-server:
+        condition: service_healthy
+      witness-demo:
+        condition: service_healthy
+    # image: weboftrust/keria:0.2.0-dev3
+    image: weboftrust/keria:0.1.3
+    # build:
+    #   context: ../keria
+    #   dockerfile: ./images/keria.dockerfile
+    environment:
+      - KERI_AGENT_CORS=1
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=UTF-8
+    configs:
+      - source: keria.json
+        target: /usr/local/var/keri/cf/keria.json
+    entrypoint: ["keria", "start", "--config-file", "keria", "--name", "agent"]
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://keria:3902/spec.yaml"]
+      interval: 2s
+      timeout: 3s
+      retries: 5
+      start_period: 2s
+    # ports:
+    #   - 3901:3901
+    #   - 3902:3902
+    #   - 3903:3903
+
+  test:
+    depends_on:
+      keria:
+        condition: service_healthy
+    build:
+      context: ./
+    environment:
+      - KERIA_HOSTNAME=keria
