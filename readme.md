@@ -33,7 +33,7 @@ cp docker-compose.override-sample.yaml docker-compose.override.yaml
 And then start all containers
 
 ```bash
-docker compose up -d
+docker compose up -d keria
 ```
 
 Then run the test using npm
