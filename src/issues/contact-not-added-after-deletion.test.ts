@@ -1,6 +1,5 @@
 import { beforeAll, expect, test } from "vitest";
 import { TestWallet } from "../test-wallet.ts";
-import { randomUUID } from "crypto";
 
 const wallet1 = new TestWallet({
   alias: "alias1",
