@@ -86,8 +86,7 @@ services:
         condition: service_healthy
       witness-demo:
         condition: service_healthy
-    image: weboftrust/keria:0.2.0-dev3
-    # image: weboftrust/keria:0.1.3
+    image: ${KERIA_IMAGE:-weboftrust/keria}:${KERIA_IMAGE_TAG:-0.2.0-dev3}
     # build:
     #   context: ../keria
     #   dockerfile: ./images/keria.dockerfile
