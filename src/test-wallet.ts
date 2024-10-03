@@ -11,6 +11,8 @@ import {
   Tier,
   randomNonce,
   CreateRegistryArgs,
+  CredentialData,
+  Saider,
 } from "signify-ts";
 // } from "signify-ts-old"; // Use signify-ts-old if testing against KERIA 0.1.3
 import { sleep } from "./test-utils";
@@ -120,9 +122,9 @@ export class TestWallet {
     await this.wait(op2);
   }
 
-  async queryKeyState(prefix: string) {
-    const op = await this.client.keyStates().query(prefix);
-    await this.wait(op);
+  async queryKeyState(prefix: string, options: { sn?: string; signal?: AbortSignal } = {}) {
+    const op = await this.client.keyStates().query(prefix, options.sn);
+    await this.wait(op, { signal: options.signal });
   }
 
   async createGroup(groupAlias: string, args: { smids: string[]; isith: number }) {
@@ -284,6 +286,78 @@ export class TestWallet {
     return op;
   }
 
+  async createCredential(groupAlias: string, args: CredentialData) {
+    let hab = await this.client.identifiers().get(groupAlias);
+
+    const result = await this.client.credentials().issue(groupAlias, args);
+    const op = result.op;
+
+    if ("group" in hab && hab.group) {
+      const recipients = await this.listOtherMembers(hab);
+      const keeper = this.client.manager?.get(hab);
+      const sigs = (await keeper?.sign(new TextEncoder().encode(result.anc.raw))) ?? [];
+      const sigers = sigs.map((sig: string) => new Siger({ qb64: sig }));
+      const ims = d(messagize(result.anc, sigers));
+      const atc = ims.substring(result.anc.size);
+
+      await this.client.exchanges().send(
+        hab.group.mhab.name,
+        "multisig",
+        hab.group.mhab,
+        "/multisig/iss",
+        { gid: hab.prefix },
+        {
+          acdc: [result.acdc, ""],
+          iss: [result.iss, ""],
+          anc: [result.anc, atc],
+        },
+        recipients
+      );
+    }
+
+    return op;
+  }
+
+  async clearNotifications() {
+    let { notes } = await this.client.notifications().list();
+    while (notes.length > 0) {
+      await Promise.all(notes.map((note: { i: string }) => this.client.notifications().delete(note.i)));
+
+      const response = await this.client.notifications().list();
+      notes = response.notes;
+    }
+  }
+
+  async join(group: string, exn: any): Promise<Operation> {
+    switch (exn.exn.r) {
+      case "/multisig/iss":
+        return await this.createCredential(group, exn.exn.e.acdc);
+      case "/ipex/grant":
+      case "/multisig/rpy":
+      case "/multisig/vcp":
+      case "/multisig/exn":
+      case "/multisig/icp":
+      default:
+        throw new Error(`Do not know how to join ${exn.exn.r} at the moment`);
+    }
+  }
+
+  async waitNotification(route: string, signal: AbortSignal) {
+    let { notes } = await this.client.notifications().list();
+
+    while (!signal.aborted) {
+      await Promise.all(notes.map((note: { i: string }) => this.client.notifications().delete(note.i)));
+      const response = await this.client.notifications().list();
+      const note = response.notes.find((note: { a: { r: string } }) => note.a.r === route);
+
+      if (note) {
+        return note;
+      }
+    }
+
+    signal.throwIfAborted();
+  }
+
   async wait<T>(
     op: Operation<T>,
     options: {
@@ -291,11 +365,14 @@ export class TestWallet {
       minSleep?: number;
       maxSleep?: number;
       increaseFactor?: number;
-      onRetry?: (op: Operation<T>) => void;
+      onRetry?: (op: Operation) => void;
     } = {}
   ): Promise<Operation<T>> {
     let operation = op;
     let retryCount = 0;
+    if (op.metadata?.depends) {
+      await this.wait<unknown>(op.metadata.depends, options);
+    }
 
     while (!operation.done) {
       options.signal?.throwIfAborted();
@@ -316,5 +393,41 @@ export class TestWallet {
       retryCount++;
     }
     return operation;
+  }
+}
+
+export interface CredentialConfig {
+  registry: string;
+  holder: string;
+  issuer: string;
+  timestamp: string;
+  LEI: string;
+}
+
+export interface QviCredentialConfig extends CredentialConfig {}
+export interface LegalEntityCredentialConfig extends CredentialConfig {
+  qviCredential: string;
+}
+
+export class vLEICredential {
+  static qvi(args: QviCredentialConfig): CredentialData {
+    return {
+      ri: args.registry,
+      s: "EBfdlu8R27Fbx-ehrqwImnK-8Cm79sqbAQ4MmvEAYqao",
+      a: {
+        dt: args.timestamp,
+        i: args.holder,
+        LEI: args.LEI,
+      },
+      r: Saider.saidify({
+        d: "",
+        usageDisclaimer: {
+          l: "Usage of a valid, unexpired, and non-revoked vLEI Credential, as defined in the associated Ecosystem Governance Framework, does not assert that the Legal Entity is trustworthy, honest, reputable in its business dealings, safe to do business with, or compliant with any laws or that an implied or expressly intended purpose will be fulfilled.",
+        },
+        issuanceDisclaimer: {
+          l: "All information in a valid, unexpired, and non-revoked vLEI Credential, as defined in the associated Ecosystem Governance Framework, is accurate as of the date the validation process was complete. The vLEI Credential has been issued to the legal entity or person named in the vLEI Credential as the subject; and the qualified vLEI Issuer exercised reasonable care to perform the validation process set forth in the vLEI Ecosystem Governance Framework.",
+        },
+      })[1],
+    };
   }
 }
