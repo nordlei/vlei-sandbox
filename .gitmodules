@@ -1,0 +1,6 @@
+[submodule "external/keripy"]
+	path = external/keripy
+	url = git@github.com:WebOfTrust/keripy.git
+[submodule "external/keria"]
+	path = external/keria
+	url = git@github.com:WebOfTrust/keria.git
