@@ -70,11 +70,11 @@ services:
       start_period: 2s
     configs:
       - source: wan.json
-        target: /usr/local/var/keri/cf/wan.json
+        target: /keripy/scripts/keri/cf/main/wan.json
       - source: wes.json
-        target: /usr/local/var/keri/cf/wes.json
+        target: /keripy/scripts/keri/cf/main/wes.json
       - source: wil.json
-        target: /usr/local/var/keri/cf/wil.json
+        target: /keripy/scripts/keri/cf/main/wil.json
     # ports:
     #   - 5642:5642
     #   - 5643:5643
