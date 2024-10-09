@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, test } from "vitest";
 import { TestWallet } from "../test-wallet.ts";
 import { createTimestamp } from "../test-utils.ts";
 
@@ -10,17 +10,13 @@ const [wallet1, wallet2, wallet3] = wallets;
 const isith = wallets.length - 1;
 
 const groupAlias = "group";
+let wits: string[];
+let toad: number;
 
 beforeAll(async () => {
   await Promise.all(wallets.map((w) => w.init()));
-});
-
-afterAll(async () => {
-  for (const wallet of wallets) {
-    const group = await wallet.client.identifiers().get(groupAlias);
-
-    console.log(`Group state for ${wallet.identifier.name}:`, await wallet.client.keyStates().get(group.prefix));
-  }
+  wits = process.env.WITNESS_IDS?.split(";") ?? [];
+  toad = Math.min(wits.length, Math.max(wits.length - 1, 0));
 });
 
 test("Resolve OOBIs", async () => {
@@ -50,7 +46,12 @@ test("First two members create multisig group", async () => {
 
   await Promise.all(
     [wallet1, wallet2].map(async (wallet) => {
-      const op = await wallet.createGroup(groupAlias, { smids, isith });
+      const op = await wallet.createGroup(groupAlias, {
+        smids,
+        isith,
+        wits,
+        toad,
+      });
       await wallet.wait(op);
     })
   );
@@ -71,7 +72,7 @@ test("First two members create agent endrole", async () => {
 
 test("Last member creates multisig group after some delay", async () => {
   const smids = wallets.map((w) => w.identifier.prefix);
-  const op = await wallet3.createGroup(groupAlias, { smids, isith });
+  const op = await wallet3.createGroup(groupAlias, { smids, isith, wits, toad });
   await wallet3.wait(op);
 });
 

@@ -105,8 +105,14 @@ export class TestWallet {
     await this.refreshIdentifier();
   }
 
-  async generateOobi(): Promise<string> {
-    const result = await this.client.oobis().get(this.options.alias, "agent");
+  async queryExchanges(filter: unknown) {
+    const path = `/exchanges/query`;
+    const res = await this.client.fetch(path, "POST", { filter });
+    return res.json();
+  }
+
+  async generateOobi(alias?: string): Promise<string> {
+    const result = await this.client.oobis().get(alias ?? this.options.alias, "agent");
 
     const oobi = result.oobis[0];
 
@@ -127,7 +133,7 @@ export class TestWallet {
     await this.wait(op, { signal: options.signal });
   }
 
-  async createGroup(groupAlias: string, args: { smids: string[]; isith: number }) {
+  async createGroup(groupAlias: string, args: { smids: string[]; isith: number; wits: string[]; toad: number }) {
     const mhab = this.identifier;
     if (!mhab) {
       throw new Error("No local identifier created");
@@ -147,6 +153,8 @@ export class TestWallet {
       mhab,
       states,
       rstates: states,
+      wits: args.wits,
+      toad: args.toad,
     });
 
     const attachment = d(
@@ -207,7 +215,7 @@ export class TestWallet {
     return ops;
   }
 
-  async listOtherMembers(group: HabState) {
+  async listOtherMembers(group: HabState): Promise<string[]> {
     const recipients = await this.client
       .identifiers()
       .members(group.name)
