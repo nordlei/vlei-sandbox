@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { TestWallet } from "../test-wallet.ts";
+import { createTimestamp } from "../test-utils.ts";
 
 const wallets = Array.from({ length: 3 }).map(
   (_, idx) => new TestWallet({ alias: `member${(idx + 1).toString().padStart(2, "0")}` })
@@ -9,13 +10,9 @@ const [wallet1, wallet2, wallet3] = wallets;
 const isith = wallets.length - 1;
 
 const groupAlias = "group";
-const registryName = "reg";
-let registryNonce: string;
-let regk: string;
 
 beforeAll(async () => {
   await Promise.all(wallets.map((w) => w.init()));
-  registryNonce = TestWallet.randomNonce();
 });
 
 afterAll(async () => {
@@ -59,16 +56,17 @@ test("First two members create multisig group", async () => {
   );
 });
 
-test("First two members creates registry", async () => {
+const dt = createTimestamp();
+
+test("First two members create agent endrole", async () => {
+  const smids = wallets.map((w) => w.identifier.prefix);
+
   await Promise.all(
     [wallet1, wallet2].map(async (wallet) => {
-      const op = await wallet.createRegistry({ name: groupAlias, registryName, nonce: registryNonce });
-      await wallet.wait(op);
+      const op = await wallet.configureGroupAgents(groupAlias, dt);
+      return Promise.all(op.map((o) => wallet.wait(o, { signal: AbortSignal.timeout(20000) })));
     })
   );
-
-  const [registry] = await wallet1.client.registries().list(groupAlias);
-  regk = registry.regk;
 });
 
 test("Last member creates multisig group after some delay", async () => {
@@ -89,16 +87,20 @@ test("Ensure group AID is the same", async () => {
 describe.skip("Query", () => {
   test("First member does multisig query", async () => {
     const group = await wallet1.client.identifiers().get(groupAlias);
-    await wallet1.queryKeyState(group.prefix, { sn: "1", signal: AbortSignal.timeout(10000) });
+    await wallet1.queryKeyState(group.prefix, { sn: "0", signal: AbortSignal.timeout(10000) });
   });
 
   test("Last member does multisig query", async () => {
     const group = await wallet3.client.identifiers().get(groupAlias);
-    await wallet3.queryKeyState(group.prefix, { sn: "1", signal: AbortSignal.timeout(10000) });
+    await wallet3.queryKeyState(group.prefix, { sn: "0", signal: AbortSignal.timeout(10000) });
   });
 });
 
-test("Last member creates registry", async () => {
-  const op = await wallet3.createRegistry({ name: groupAlias, registryName, nonce: registryNonce });
-  await wallet3.wait(op, { signal: AbortSignal.timeout(5000), onRetry: (op) => console.dir(op, { depth: 100 }) });
+test("Last member creates agent endroles", async () => {
+  const op = await wallet3.configureGroupAgents(groupAlias, dt);
+  await Promise.all(
+    op.map((o) =>
+      wallet3.wait(o, { signal: AbortSignal.timeout(20000), onRetry: (op) => console.dir(op, { depth: 100 }) })
+    )
+  );
 });
