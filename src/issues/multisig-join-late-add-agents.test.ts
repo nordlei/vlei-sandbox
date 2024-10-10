@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, test } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { TestWallet } from "../test-wallet.ts";
 import { createTimestamp } from "../test-utils.ts";
 
@@ -17,6 +17,10 @@ beforeAll(async () => {
   await Promise.all(wallets.map((w) => w.init()));
   wits = process.env.WITNESS_IDS?.split(";") ?? [];
   toad = Math.min(wits.length, Math.max(wits.length - 1, 0));
+});
+
+afterAll(async () => {
+  console.log(wallets.map((w, idx) => `MEMBER_${(idx + 1).toString().padStart(2, "0")}="${w.client.bran}"`).join("\n"));
 });
 
 test("Resolve OOBIs", async () => {

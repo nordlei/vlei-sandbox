@@ -17,12 +17,13 @@ import {
 // } from "signify-ts-old"; // Use signify-ts-old if testing against KERIA 0.1.3
 import { sleep } from "./test-utils";
 
-const KERIA_HOSTNAME = process.env.KERIA_HOSTNAME ?? `localhost`;
-const KERIA_AGENT_URL = `http://${KERIA_HOSTNAME}:3901`;
-const KERIA_BOOT_URL = `http://${KERIA_HOSTNAME}:3903`;
+export const KERIA_HOSTNAME = process.env.KERIA_HOSTNAME ?? `localhost`;
+export const KERIA_AGENT_URL = `http://${KERIA_HOSTNAME}:3901`;
+export const KERIA_BOOT_URL = `http://${KERIA_HOSTNAME}:3903`;
 
 export interface TestWalletOptions {
   alias: string;
+  passcode?: string;
 }
 
 function assertDefined<T>(obj: T | null): asserts obj is T {
@@ -52,8 +53,12 @@ export class TestWallet {
   }
 
   private async refreshIdentifier() {
-    const result = await this.client.identifiers().get(this.options.alias);
-    this._identifier = result;
+    try {
+      const result = await this.client.identifiers().get(this.options.alias);
+      this._identifier = result;
+    } catch (error) {
+      //ignore
+    }
   }
 
   async init() {
@@ -64,10 +69,15 @@ export class TestWallet {
 
   async boot() {
     await ready();
-    const passcode = randomPasscode();
-    const client = new SignifyClient(KERIA_AGENT_URL, passcode, Tier.low, KERIA_BOOT_URL);
-    await client.boot();
-    this._client = client;
+    if (!this.options.passcode) {
+      const passcode = randomPasscode();
+      const client = new SignifyClient(KERIA_AGENT_URL, passcode, Tier.low, KERIA_BOOT_URL);
+      await client.boot();
+      this._client = client;
+    } else {
+      const client = new SignifyClient(KERIA_AGENT_URL, this.options.passcode, Tier.low);
+      this._client = client;
+    }
   }
 
   async connect() {
@@ -85,6 +95,11 @@ export class TestWallet {
   }
 
   async createIdentifier() {
+    await this.refreshIdentifier();
+    if (this._identifier) {
+      return;
+    }
+
     const agentId = this.client.agent?.pre;
     if (!agentId) {
       throw new Error(`No agent id available`);
