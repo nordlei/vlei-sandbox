@@ -85,6 +85,8 @@ test("Ensure group AID is the same", async () => {
 });
 
 // Enable to run multisig query
+// These are just steps to try and force the keria agent to collect the signatures of the multisig group
+// so that member 3 can complete the operation below
 describe.skip("Query", () => {
   test("First member does multisig query", async () => {
     const group = await wallet1.client.identifiers().get(groupAlias);
@@ -94,6 +96,11 @@ describe.skip("Query", () => {
   test("Last member does multisig query", async () => {
     const group = await wallet3.client.identifiers().get(groupAlias);
     await wallet3.queryKeyState(group.prefix, { sn: "0", signal: AbortSignal.timeout(10000) });
+  });
+
+  test("Last member resolves group OOBI", async () => {
+    const oobi = await wallet1.generateOobi(groupAlias);
+    await wallet3.resolveOobi(oobi);
   });
 });
 
