@@ -63,7 +63,17 @@ test("First two members create agent endrole", async () => {
   );
 });
 
-test.skip("Last member creates multisig group after some delay", async () => {
+test("Verify oobi contains end roles", async () => {
+  const oobi = await wallet1.generateOobi(groupAlias);
+  const url = new URL(oobi);
+  url.hostname = KERIA_HOSTNAME;
+
+  const oobiStream = await fetch(url).then((r) => r.text());
+
+  expect(oobiStream).toContain(`"r":"/end/role/add"`);
+});
+
+test("Last member creates multisig group after some delay", async () => {
   const smids = wallets.map((w) => w.identifier.prefix);
   const op = await wallet3.createGroup(groupAlias, { smids, isith, wits, toad });
   await wallet3.wait(op);
@@ -74,5 +84,7 @@ test("Verify oobi contains end roles", async () => {
   const url = new URL(oobi);
   url.hostname = KERIA_HOSTNAME;
 
-  console.log(await fetch(url).then((r) => r.text()));
+  const oobiStream = await fetch(url).then((r) => r.text());
+
+  expect(oobiStream).toContain(`"r":"/end/role/add"`);
 });
