@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { TestWallet } from "../test-wallet.ts";
+import { formatMemberVariables } from "../test-utils.ts";
 
 const wallets = Array.from({ length: 3 }).map(
   (_, idx) => new TestWallet({ alias: `member${(idx + 1).toString().padStart(2, "0")}` })
@@ -22,12 +23,8 @@ beforeAll(async () => {
   toad = Math.min(wits.length, Math.max(wits.length - 1, 0));
 });
 
-afterAll(async () => {
-  for (const wallet of wallets) {
-    const group = await wallet.client.identifiers().get(groupAlias);
-
-    console.log(`Group state for ${wallet.identifier.name}:`, await wallet.client.keyStates().get(group.prefix));
-  }
+afterAll(() => {
+  formatMemberVariables(wallets);
 });
 
 test("Resolve OOBIs", async () => {

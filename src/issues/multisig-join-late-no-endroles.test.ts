@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { KERIA_HOSTNAME, TestWallet } from "../test-wallet.ts";
-import { createTimestamp } from "../test-utils.ts";
+import { createTimestamp, formatMemberVariables } from "../test-utils.ts";
 
 const wallets = Array.from({ length: 3 }).map(
   (_, idx) => new TestWallet({ alias: `member${(idx + 1).toString().padStart(2, "0")}` })
@@ -19,8 +19,8 @@ beforeAll(async () => {
   toad = Math.min(wits.length, Math.max(wits.length - 1, 0));
 });
 
-afterAll(async () => {
-  console.log(wallets.map((w, idx) => `MEMBER_${(idx + 1).toString().padStart(2, "0")}="${w.client.bran}"`).join("\n"));
+afterAll(() => {
+  formatMemberVariables(wallets);
 });
 
 test("Resolve OOBIs", async () => {

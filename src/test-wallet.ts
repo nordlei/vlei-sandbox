@@ -366,12 +366,9 @@ export class TestWallet {
   }
 
   async waitNotification(route: string, signal: AbortSignal) {
-    let { notes } = await this.client.notifications().list();
-
     while (!signal.aborted) {
-      await Promise.all(notes.map((note: { i: string }) => this.client.notifications().delete(note.i)));
       const response = await this.client.notifications().list();
-      const note = response.notes.find((note: { a: { r: string } }) => note.a.r === route);
+      const note = response.notes.reverse().find((note: { a: { r: string } }) => note.a.r === route);
 
       if (note) {
         return note;
@@ -416,6 +413,13 @@ export class TestWallet {
       retryCount++;
     }
     return operation;
+  }
+
+  async getRegistry(args: { owner: string; name: string }): Promise<{ regk: string }> {
+    const path = `/identifiers/${args.owner}/registries/${args.name}`;
+    const method = "GET";
+    const res = await this.client.fetch(path, method, null);
+    return (await res.json()) as any;
   }
 }
 
