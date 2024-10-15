@@ -28,7 +28,7 @@ afterAll(async () => {
 });
 
 test("Resolve OOBIs", async () => {
-  for (const wallet of [wallet1, wallet2]) {
+  for (const wallet of wallets) {
     for (const other of wallets) {
       if (other.identifier.prefix !== wallet.identifier.prefix) {
         await wallet.resolveOobi(await other.generateOobi(), other.identifier.name);
@@ -37,16 +37,6 @@ test("Resolve OOBIs", async () => {
 
     expect(await wallet.client.contacts().list()).toHaveLength(2);
   }
-});
-
-test("Last member resolve oobi", async () => {
-  for (const other of wallets) {
-    if (other.identifier.prefix !== wallet3.identifier.prefix) {
-      await wallet3.resolveOobi(await other.generateOobi(), other.identifier.name);
-    }
-  }
-
-  expect(await wallet3.client.contacts().list()).toHaveLength(2);
 });
 
 test("All members create multisig group", async () => {
