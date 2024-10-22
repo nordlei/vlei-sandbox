@@ -13,7 +13,7 @@ docker compose run --build --rm test
 To run a specific test file:
 
 ```bash
-docker compose run --rm --build test npm start src/issues/contact-not-added-after-deletion.test.ts
+docker compose run --rm --build test src/issues/contact-not-added-after-deletion.test.ts
 ```
 
 ### NPM
