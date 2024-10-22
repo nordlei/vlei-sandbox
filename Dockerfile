@@ -7,4 +7,5 @@ RUN npm ci
 COPY vitest.config.ts ./
 COPY src ./src
 
-CMD ["npm", "start"]
+ENTRYPOINT [ "npm", "start" ]
+# CMD ["npm", "start"]

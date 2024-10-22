@@ -95,10 +95,9 @@ services:
         condition: service_healthy
       witness-demo:
         condition: service_healthy
-    image: ${KERIA_IMAGE:-weboftrust/keria}:${KERIA_IMAGE_TAG:-0.2.0-dev3}
-    # build:
-    #   context: ../keria
-    #   dockerfile: ./images/keria.dockerfile
+    build:
+      context: ./images/keria-escrow-timeout
+      dockerfile: Dockerfile
     environment:
       - KERI_AGENT_CORS=1
       - PYTHONUNBUFFERED=1
@@ -106,7 +105,6 @@ services:
     configs:
       - source: keria.json
         target: /usr/local/var/keri/cf/keria.json
-    entrypoint: ["keria", "start", "--config-file", "keria", "--name", "agent"]
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://keria:3902/spec.yaml"]
       interval: 2s
