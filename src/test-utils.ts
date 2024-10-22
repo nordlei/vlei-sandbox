@@ -12,3 +12,13 @@ export function createTimestamp() {
 export function formatMemberVariables(wallets: TestWallet[]) {
   return wallets.map((w, idx) => `MEMBER_${(idx + 1).toString().padStart(2, "0")}="${w.client.bran}"`).join("\n");
 }
+
+export async function introduce(wallets: TestWallet[]) {
+  for (const wallet of wallets) {
+    for (const other of wallets) {
+      if (other.identifier.prefix !== wallet.identifier.prefix) {
+        await wallet.resolveOobi(await other.generateOobi(), other.identifier.name);
+      }
+    }
+  }
+}
