@@ -8,4 +8,3 @@ COPY vitest.config.ts ./
 COPY src ./src
 
 ENTRYPOINT [ "npm", "start" ]
-# CMD ["npm", "start"]
