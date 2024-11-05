@@ -56,9 +56,24 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONIOENCODING=UTF-8
-    command: ["vLEI-server", "-s", "./schema/acdc", "-c", "./samples/acdc/", "-o", "./samples/oobis/"]
+    command:
+      [
+        "vLEI-server",
+        "-s",
+        "./schema/acdc",
+        "-c",
+        "./samples/acdc/",
+        "-o",
+        "./samples/oobis/",
+      ]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7723/oobi/EBfdlu8R27Fbx-ehrqwImnK-8Cm79sqbAQ4MmvEAYqao"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:7723/oobi/EBfdlu8R27Fbx-ehrqwImnK-8Cm79sqbAQ4MmvEAYqao",
+        ]
       interval: 2s
       timeout: 3s
       retries: 5
@@ -95,7 +110,8 @@ services:
         condition: service_healthy
       witness-demo:
         condition: service_healthy
-    image: ${KERIA_IMAGE:-weboftrust/keria}:${KERIA_IMAGE_TAG:-0.2.0-dev3}
+    image: ${KERIA_IMAGE:-weboftrust/keria}:${KERIA_IMAGE_TAG:-0.2.0-dev4}
+    platform: linux/x86_64
     # build:
     #   context: ../keria
     #   dockerfile: ./images/keria.dockerfile
