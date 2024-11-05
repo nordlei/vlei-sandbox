@@ -13,8 +13,8 @@ import {
   CreateRegistryArgs,
   CredentialData,
   Saider,
-} from "signify-ts";
-// } from "signify-ts-old"; // Use signify-ts-old if testing against KERIA 0.1.3
+  // } from "signify-ts";
+} from "signify-ts-old"; // Use signify-ts-old if testing against KERIA 0.1.3
 import { sleep } from "./test-utils";
 
 export const KERIA_HOSTNAME = process.env.KERIA_HOSTNAME ?? `localhost`;
